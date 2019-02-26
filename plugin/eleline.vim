@@ -1,7 +1,7 @@
 " =============================================================================
 " Filename: eleline.vim
-" Author: Liu-Cheng Xu
-" URL: https://github.com/liuchengxu/eleline.vim
+" Author: yiqiao wang
+" URL: https://github.com/yiqiaowang/statusline
 " License: MIT License
 " =============================================================================
 scriptencoding utf-8
@@ -117,6 +117,13 @@ function! ElelineGitBranch(...) abort
   return ''
 endfunction
 
+function! ElelineGinaBranch(...) abort
+  let reload = get(a:, 1, 0) == 1
+  if exists('b:eleline_branch') && !reload | return b:eleline_branch | endif
+  let b:eleline_branch = gina#component#repo#branch()
+  return b:eleline_branch
+endfunction
+
 function! s:out_cb(channel, message) abort
   if a:message =~ "^* "
     let l:job = ch_getjob(a:channel)
@@ -189,7 +196,7 @@ function! s:StatusLine() abort
   let l:bufnr_winnr = s:def('ElelineBufnrWinnr')
   let l:paste = s:def('ElelinePaste')
   let l:curfname = s:def('ElelineCurFname')
-  let l:branch = s:def('ElelineGitBranch')
+  let l:branch = s:def('ElelineGinaBranch')
   let l:status = s:def('ElelineGitStatus')
   let l:error = s:def('ElelineError')
   let l:warning = s:def('ElelineWarning')
@@ -276,7 +283,7 @@ function! s:hi_statusline() abort
   call s:hi('ElelinePaste'      , [232 , 178]    , [232 , 178]    , 'bold')
   call s:hi('ElelineFsize'      , [250 , s:bg+6] , [235 , ''] )
   call s:hi('ElelineCurFname'   , [171 , s:bg+4] , [171 , '']     , 'bold' )
-  call s:hi('ElelineGitBranch'  , [184 , s:bg+2] , [89  , '']     , 'bold' )
+  call s:hi('ElelineGinaBranch' , [184 , s:bg+2] , [89  , '']     , 'bold' )
   call s:hi('ElelineGitStatus'  , [208 , s:bg+2] , [89  , ''])
   call s:hi('ElelineError'      , [197 , s:bg+2] , [197 , ''])
   call s:hi('ElelineWarning'    , [214 , s:bg+2] , [214 , ''])
@@ -304,7 +311,7 @@ endfunction
 " current window and buffer, while %{} items are evaluated in the
 " context of the window that the statusline belongs to.
 function! s:SetStatusLine(...) abort
-  call ElelineGitBranch(1)
+  call ElelineGinaBranch(1)
   let &l:statusline = s:StatusLine()
   " User-defined highlightings shoule be put after colorscheme command.
   call s:hi_statusline()
