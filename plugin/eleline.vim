@@ -197,7 +197,7 @@ function! s:StatusLine() abort
   let l:paste = s:def('ElelinePaste')
   let l:curfname = s:def('ElelineCurFname')
   let l:branch = '  '.s:def('ElelineGinaBranch')
-  let l:status = s:def('ElelineGitStatus')
+  let l:status = '  '.s:def('ElelineGitStatus')
   let l:error = s:def('ElelineError')
   let l:warning = s:def('ElelineWarning')
   let l:tags = '%{exists("b:gutentags_files") ? gutentags#statusline() : ""} '
