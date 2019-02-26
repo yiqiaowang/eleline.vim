@@ -196,7 +196,7 @@ function! s:StatusLine() abort
   let l:bufnr_winnr = s:def('ElelineBufnrWinnr')
   let l:paste = s:def('ElelinePaste')
   let l:curfname = s:def('ElelineCurFname')
-  let l:branch = s:def('ElelineGinaBranch')
+  let l:branch = '  '.s:def('ElelineGinaBranch')
   let l:status = s:def('ElelineGitStatus')
   let l:error = s:def('ElelineError')
   let l:warning = s:def('ElelineWarning')
