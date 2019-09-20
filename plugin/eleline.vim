@@ -14,6 +14,7 @@ let s:save_cpo = &cpoptions
 set cpoptions&vim
 
 let s:font = get(g:, 'eleline_powerline_fonts', get(g:, 'airline_powerline_fonts', 0))
+let s:f_icon = s:font ? get(g:, 'eleline_function_icon', " \uf794 ") : ''
 let s:gui = has('gui_running')
 let s:jobs = {}
 
@@ -183,16 +184,22 @@ function! ElelineLCN() abort
   return eleline#LanguageClientNeovim()
 endfunction
 
+function! ElelineVista() abort
+  return !empty(get(b:, 'vista_nearest_method_or_function', '')) ? s:f_icon.b:vista_nearest_method_or_function : ''
+endfunction
+
 function! ElelineCoc() abort
   if s:is_tmp_file() | return '' | endif
-  return get(g:, 'coc_status', '')
+  if exists('g:coc_status') && get(g:, 'coc_enabled', 0) | return g:coc_status.' ' | endif
+  return ''
+endfunction
+
+function! s:def(fn) abort
+  return printf('%%#%s#%%{%s()}%%*', a:fn, a:fn)
 endfunction
 
 " https://github.com/liuchengxu/eleline.vim/wiki
 function! s:StatusLine() abort
-  function! s:def(fn) abort
-    return printf('%%#%s#%%{%s()}%%*', a:fn, a:fn)
-  endfunction
   let l:bufnr_winnr = s:def('ElelineBufnrWinnr')
   let l:paste = s:def('ElelinePaste')
   let l:curfname = s:def('ElelineCurFname')
@@ -203,8 +210,9 @@ function! s:StatusLine() abort
   let l:tags = '%{exists("b:gutentags_files") ? gutentags#statusline() : ""} '
   let l:lcn = '%{ElelineLCN()}'
   let l:coc = '%{ElelineCoc()}'
+  let l:vista = '%#ElelineVista#%{ElelineVista()}%*'
   let l:prefix = l:bufnr_winnr.l:paste
-  let l:common = l:curfname.l:branch.l:status.l:error.l:warning.l:tags.l:lcn.l:coc
+  let l:common = l:curfname.l:branch.l:status.l:error.l:warning.l:tags.l:lcn.l:coc.l:vista
   if get(g:, 'eleline_slim', 0)
     return l:prefix.'%<'.l:common
   endif
@@ -266,10 +274,17 @@ endif
 function! s:hi(group, dark, light, ...) abort
   let [fg, bg] = &bg ==# 'dark' ? a:dark : a:light
 
-  if empty(bg) && &bg ==# 'light'
-    let reverse = s:extract('StatusLine', 'reverse')
-    let ctermbg = s:extract('StatusLine', reverse ? 'fg' : 'bg', 'cterm')
-    let guibg = s:extract('StatusLine', reverse ? 'fg': 'bg' , 'gui')
+  if empty(bg)
+    if &bg ==# 'light'
+      let reverse = s:extract('StatusLine', 'reverse')
+      let ctermbg = s:extract('StatusLine', reverse ? 'fg' : 'bg', 'cterm')
+      let ctermbg = empty(ctermbg) ? 237 : ctermbg
+      let guibg = s:extract('StatusLine', reverse ? 'fg': 'bg' , 'gui')
+      let guibg = empty(guibg) ? s:colors[237] : guibg
+    else
+      let ctermbg = bg
+      let guibg = s:colors[bg]
+    endif
   else
     let ctermbg = bg
     let guibg = s:colors[bg]
@@ -291,6 +306,7 @@ function! s:hi_statusline() abort
   call s:hi('ElelineGitStatus'  , [208 , s:bg+2] , [89  , ''])
   call s:hi('ElelineError'      , [197 , s:bg+2] , [197 , ''])
   call s:hi('ElelineWarning'    , [214 , s:bg+2] , [214 , ''])
+  call s:hi('ElelineVista'      , [149 , s:bg+2] , [149 , ''])
 
   if &bg ==# 'dark'
     call s:hi('StatusLine' , [140 , s:bg+2], [140, ''] , 'none')
@@ -309,6 +325,11 @@ function! s:InsertStatuslineColor(mode) abort
   else
     call s:hi('ElelineBufnrWinnr' , [232, 178], [89, ''])
   endif
+endfunction
+
+function! s:qf() abort
+  let l:bufnr_winnr = s:def('ElelineBufnrWinnr')
+  let &l:statusline = l:bufnr_winnr."%{exists('w:quickfix_title')? ' '.w:quickfix_title : ''} %l/%L %p"
 endfunction
 
 " Note that the "%!" expression is evaluated in the context of the
@@ -336,6 +357,7 @@ augroup eleline
   autocmd BufWinEnter,ShellCmdPost,BufWritePost * call s:SetStatusLine()
   autocmd FileChangedShellPost,ColorScheme * call s:SetStatusLine()
   autocmd FileReadPre,ShellCmdPost,FileWritePost * call s:SetStatusLine()
+  autocmd FileType qf call s:qf()
 augroup END
 
 let &cpoptions = s:save_cpo
