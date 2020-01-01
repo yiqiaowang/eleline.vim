@@ -83,48 +83,10 @@ function! s:is_tmp_file() abort
   endif
 endfunction
 
-" Reference: https://github.com/chemzqm/vimrc/blob/master/statusline.vim
-function! ElelineGitBranch(...) abort
-  if s:is_tmp_file() | return '' | endif
-  let reload = get(a:, 1, 0) == 1
-  if exists('b:eleline_branch') && !reload | return b:eleline_branch | endif
-  if !exists('*FugitiveExtractGitDir') | return '' | endif
-  let roots = values(s:jobs)
-  let dir = get(b:, 'git_dir', FugitiveExtractGitDir(resolve(expand('%:p'))))
-  if empty(dir) | return '' | endif
-  let b:git_dir = dir
-  let root = fnamemodify(dir, ':h')
-  if index(roots, root) >= 0 | return '' | endif
-
-  let argv = add(has('win32') ? ['cmd', '/c']: ['bash', '-c'], 'git branch')
-  if exists('*job_start')
-    let job = job_start(argv, {'out_io': 'pipe', 'err_io':'null',  'out_cb': function('s:out_cb')})
-    if job_status(job) ==# 'fail' | return '' | endif
-    let s:cwd = root
-    let job_id = matchstr(job, '\d\+')
-    let s:jobs[job_id] = root
-  elseif exists('*jobstart')
-    let job_id = jobstart(argv, {
-      \ 'cwd': root,
-      \ 'stdout_buffered': v:true,
-      \ 'stderr_buffered': v:true,
-      \ 'on_exit': function('s:on_exit')
-      \})
-    if job_id == 0 || job_id == -1 | return '' | endif
-    let s:jobs[job_id] = root
-  elseif exists('g:loaded_fugitive')
-    let l:head = fugitive#head()
-    let l:symbol = s:font ? " \ue0a0 " : ' Git:'
-    return empty(l:head) ? '' : l:symbol.l:head . ' '
-  endif
-
-  return ''
-endfunction
-
 function! ElelineGitBranch(...) abort
   let reload = get(a:, 1, 0) == 1
   if exists('b:eleline_git_status') && !reload | return b:eleline_git_status | endif
-  let b:eleline_git_status = get(b:, 'coc_git_status', '')
+  let b:eleline_git_status = get(g:, 'coc_git_status', '')
   return b:eleline_git_status
 endfunction
 
@@ -169,14 +131,12 @@ function! s:SetGitBranch(root, str) abort
 endfunction
 
 function! ElelineGitStatus() abort
-  let l:summary = [0, 0, 0]
-  if exists('b:sy')
-    let l:summary = b:sy.stats
-  elseif exists('b:gitgutter.summary')
-    let l:summary = b:gitgutter.summary
+  let l:summary = '' 
+  if exists('b:coc_git_status')
+    let l:summary = b:coc_git_status
   endif
-  if max(l:summary) > 0
-    return '   +'.l:summary[0].' ~'.l:summary[1].' -'.l:summary[2].' '
+  if len(l:summary) > 0
+    return l:summary
   endif
   return ''
 endfunction
@@ -205,7 +165,7 @@ function! s:StatusLine() abort
   let l:bufnr_winnr = s:def('ElelineBufnrWinnr')
   let l:paste = s:def('ElelinePaste')
   let l:curfname = s:def('ElelineCurFname')
-  let l:branch = '  '.s:def('ElelineGitBranch')
+  let l:branch = s:def('ElelineGitBranch')
   let l:status = s:def('ElelineGitStatus')
   let l:error = s:def('ElelineError')
   let l:warning = s:def('ElelineWarning')
