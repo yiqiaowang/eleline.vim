@@ -84,8 +84,6 @@ function! s:is_tmp_file() abort
 endfunction
 
 function! ElelineGitBranch(...) abort
-  let reload = get(a:, 1, 0) == 1
-  if exists('b:eleline_git_status') && !reload | return b:eleline_git_status | endif
   let b:eleline_git_status = get(g:, 'coc_git_status', '')
   return b:eleline_git_status
 endfunction
